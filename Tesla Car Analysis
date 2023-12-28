@@ -1,0 +1,190 @@
+-- Kajal Dhimmar
+
+
+
+-- Let's do some analysis on this big used car data set.
+
+-- start coding:
+
+SELECT * FROM cars_craigslist.vehicles;
+
+
+
+-- INITATIONPOINT OF TESLA ANALYSIS:-
+
+
+
+
+-- This pieace of code is to get basic overview of our dataset such as Avg_price, oldest and latest car model by year
+-- First we remove all the redundant values from our dataset, after we perform this, followed by this findings.
+-- In our dataset oldest car we have is from year 1900 and  recent car we have is from year 2022
+-- avg_odometer is 98225.1269 and avg_price is 62227.8792 
+
+
+SELECT
+    COUNT(*) AS total_cars,
+    AVG(price) AS avg_price,
+   -- AVG(year) AS avg_year,
+    MIN(year) AS min_year,
+    MAX(year) AS max_year,
+    AVG(odometer) AS avg_odometer,
+    MIN(odometer) AS min_odometer,
+    MAX(odometer) AS max_odometer
+FROM cars_craigslist.vehicles
+WHERE
+    year IS NOT NULL
+    AND (price IS NOT NULL OR price >= 1000)
+    AND (odometer IS NOT NULL OR odometer >= 5000);
+    
+-- At the outset, I perform a range of analysis to gain insights and familiarize myself with our dataset. Also use your code reference 
+-- Doc. Richard, which was quite helpful.
+
+-- Eventually, I decided to focus my analysis on Tesla cars, Being a big fan of Elon Musk and Tesla cars, found this topic to be intersting
+-- to undercover some key point.
+
+-- Ok... Let's start this Tesla Analysis:
+
+
+
+-- MIDPOINT OF TESLA ANALYSIS:-
+
+
+
+-- As I state below, this are
+-- Average prices and odometer readings of Tesla cars in different states by car_condition and year (removing all null car_condition)
+
+
+SELECT
+    state,
+    manufacturer,
+    car_condition,
+    year,
+    AVG(price) AS avg_price,
+    AVG(odometer) AS avg_odometer
+FROM cars_craigslist.vehicles
+WHERE manufacturer = 'Tesla'
+-- get rid of rows with null car_condition
+    AND car_condition IS NOT NULL
+GROUP BY state, manufacturer, car_condition, year
+ORDER BY state, manufacturer, car_condition, year;
+
+-- In above output, there are many data point for tesla cars, To make this little easy to understand I found most expensive and chepest tesla 
+-- car  with some cap value by car_condition and year.
+
+-- Find states with the most expensive Tesla cars by car_condition and year
+
+WITH TeslaPrices AS (
+    SELECT
+        state,
+        manufacturer,
+        car_condition,
+        year,
+        AVG(price) AS avg_price,
+        AVG(odometer) AS avg_odometer
+    FROM cars_craigslist.vehicles
+    WHERE manufacturer = 'tesla'
+        AND car_condition IS NOT NULL 
+    GROUP BY state, manufacturer, car_condition, year
+)
+
+SELECT
+    state,
+    car_condition,
+    year,
+    avg_price,
+    avg_odometer
+FROM TeslaPrices
+WHERE avg_price = (SELECT MAX(avg_price) FROM TeslaPrices);
+
+-- We found, that in our dataset most expensive car is $ 85000 and in excellent condition which is from year 2018.
+
+-- Find states with the cheapest Tesla cars (average price > $15000) by car_condition and year
+
+WITH TeslaPrices AS (
+    SELECT
+        state,
+        manufacturer,
+        car_condition,
+        year,
+        AVG(price) AS avg_price,
+        AVG(odometer) AS avg_odometer
+    FROM cars_craigslist.vehicles
+    WHERE manufacturer = 'tesla'
+        AND car_condition IS NOT NULL 
+    GROUP BY state, manufacturer, car_condition, year
+)
+
+SELECT
+    state,
+    car_condition,
+    year,
+    avg_price,
+    avg_odometer
+FROM TeslaPrices
+WHERE avg_price = (SELECT MIN(avg_price) FROM TeslaPrices WHERE avg_price > 15000);
+
+-- As far as the cheapest car, we have year 2013 model with avg_price 20000 and plus in good condition.{obviously, I put some cap value here 
+-- for cheap tesla, which is $ 15000 , but we are looking tesla here right :)}
+
+-- The pattern I notice here is, old model has lowest avg_values but still in good condition.
+
+
+
+-- ENDPOINT OF TESLA ANALYSIS
+
+
+-- Finally, 
+
+-- Find the average price, car_condition, and year for Tesla cars with different values in each state (ignoring mileage)
+
+
+SELECT
+    manufacturer,
+    state,
+    car_condition,
+    year,
+    AVG(price) AS avg_price
+FROM cars_craigslist.vehicles
+WHERE model IS NOT NULL -- Exclude rows with null model
+    AND manufacturer = 'tesla' -- Filter for Tesla cars
+    AND car_condition IS NOT NULL 
+GROUP BY manufacturer, state, car_condition, year
+HAVING COUNT(DISTINCT price) > 1 -- Filter Tesla cars with different prices in different states
+ORDER BY year DESC, avg_price ASC, manufacturer, state, car_condition;
+
+-- To get a closer look, 
+
+-- Find the average price for Tesla cars in California (CA) and Florida (FL) and Texas(TX) for years 2018 and 2019, with car condition
+
+SELECT
+    state,
+    car_condition,
+    year,
+    AVG(price) AS avg_price
+FROM cars_craigslist.vehicles
+WHERE manufacturer = 'tesla' -- Filter for Tesla cars
+    AND state IN ('CA','fl','tx') -- Filter for California and Nevada
+    AND year IN (2018,2019) -- Filter for years 2018 and 2019
+    AND car_condition IS NOT NULL -- Exclude rows with null car condition
+GROUP BY state, car_condition, year
+ORDER BY state, year, car_condition;
+
+-- As we can see in the output, we got year 2018 model good car condition but expensive in Florida state which is $ 46,075, 
+-- In California and Texas 2018 year, good car condition but, prices are respectively $ 39,847 and $ 39,990 
+-- Which is almost $ 6000 price difference. quite lot of money right :(
+
+-- We can also compare other states like this and find intersting insights from it.
+
+-- overall, I would say this dataset is quite interstng and we can do so much using this dataset and find hidden patterns and key points.
+
+
+
+
+
+
+
+
+
+
+
+ 
